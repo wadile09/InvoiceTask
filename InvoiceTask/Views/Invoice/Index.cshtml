@@ -1,0 +1,166 @@
+﻿@using Newtonsoft.Json
+@model InvoiceViewModel
+<div class="container">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div id="successalert" class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+    <div class="text-center border-1">
+        <h2 >Invoice Detials</h2>
+    </div>
+     <table class="table table-bordered">
+        <thead class="bg-dark text-white">
+            <tr>
+                <th>Invoice No.</th>
+                <th>Invoice Date</th>
+                <th>Customer Name</th>
+                <th>Mobile</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var invoice in Model.InvoiceDetails)
+            {
+                <tr>
+                    <td>@invoice.InvoiceNo</td>
+                    <td>@invoice.InvoiceDate.ToString("yyyy-MM-dd")</td>
+                    <td>@invoice.CustomerName</td>
+                    <td>@invoice.Mobile</td>
+                    <td>@invoice.Total</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <button type="button" class="btn bg-dark text-white" data-bs-toggle="modal" data-bs-target="#invoiceModal">Create Invoice</button>
+    <div class="modal fade" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="invoiceModalLabel">Invoice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form asp-action="Create" method="post">
+                        <div class="card">
+                            <div class="card-body">
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text">Inv. No.</span>
+                                            <input asp-for="InvoiceNo" class="form-control" placeholder="Invoice No." readonly />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text">Inv. Date</span>
+                                            <input asp-for="InvoiceDate" type="date" class="form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text">Customer <span style="color: red">*</span></span>
+                                            <select asp-for="CustomerId" asp-items="Model.Customers" class="form-control" onchange="getCustomerMobile()">
+                                                <option value="">--Select Customer--</option>
+                                            </select>
+                                        </div>
+                                        <span asp-validation-for="CustomerId" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text">Mobile No. <span style="color: red">*</span></span>
+                                            <input asp-for="Mobile" name="Mobile" id="Mobile" class="form-control" placeholder="Mobile No." readonly />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 7px;">
+                                    <button type="button" id="addItemButton" class="btn bg-dark text-white">Add Items</button>
+                                </div>
+
+                                <!-- Add this in your existing modal body -->
+                                <table class="table table-bordered" id="ID_Itemtable">
+                                    <thead class="bg-dark text-white">
+                                        <tr>
+                                            <th class="border-right">Item Name</th>
+                                            <th class="border-right">Rate</th>
+                                            <th class="border-right">Quantity</th>
+                                            <th class="border-right">Discount</th>
+                                            <th class="border-right">Total</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemTable" class="overflow-auto">
+                                        @for (int i = 0; i < Model.Items.Count; i++)
+                                        {
+                                            <tr>
+                                                <td class="border-right">
+                                                    <select asp-for="Items[i].ItemId" asp-items="Model.AvailableItems" class="form-control" onchange="updateItemRate(this)">
+                                                        <option value="">--Select Item--</option>
+                                                    </select>
+                                                </td>
+                                                <td class="border-right">
+                                                    <input asp-for="Items[i].Rate" class="form-control" readonly />
+                                                </td>
+                                                <td class="border-right">
+                                                    <input asp-for="Items[i].Quantity" class="form-control" />
+                                                    <span asp-validation-for="Items[i].Quantity" class="text-danger"></span>
+                                                </td>
+                                                <td class="border-right">
+                                                    <input asp-for="Items[i].Discount" class="form-control" />
+                                                </td>
+                                                <td class="border-right">
+                                                    <input asp-for="Items[i].Total" class="form-control" readonly />
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-sm" title="Remove" onclick="removeItem(this)">
+                                                        <i class="fa fa-trash" style="font-size:25px; color:red;"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text">Subtotal</span>
+                                            <input asp-for="Subtotal" name="Subtotal" class="form-control text-end" readonly />
+                                        </div>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text">Discount</span>
+                                            <input asp-for="TotalDiscount" name="TotalDiscount" class="form-control text-end" readonly />
+                                        </div>
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text">Total</span>
+                                            <input asp-for="Total" name="Total" class="form-control text-end" readonly />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="text-center">
+                                        <button type="submit" class="btn bg-dark text-white" id="buttoncss">Save Invoice</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+<script>
+
+    var availableItems = @Html.Raw(JsonConvert.SerializeObject(Model.AvailableItems));
+</script>
+    }
